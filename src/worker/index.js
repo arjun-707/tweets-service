@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 const mongoose = require('mongoose');
 const logger = require('../config/logger');
 const config = require('../config/config');
@@ -9,11 +8,11 @@ const processWorkers = async (eachQueueName) => {
   const { name, worker } = QUEUE_NAMES[eachQueueName];
   const QueueInstance = queueService.getQueueInstance(name);
   QueueInstance.process(async (job, done) => {
-    console.log(`Processing job ${job.id}`);
+    logger.info(`Processing job ${job.id}`);
     const result = await worker.execute(job.data);
     return done(null, result);
   });
-  console.log(`listening to queue: ${name}`);
+  logger.info(`listening to queue: ${name}`);
 };
 const start = async () => {
   mongoose.connect(config.mongoose.url, config.mongoose.options).then(async () => {

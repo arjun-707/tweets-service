@@ -34,6 +34,7 @@ const taskSchema = mongoose.Schema(
     deletedBy: {
       type: String,
     },
+    error: {},
   },
   {
     timestamps: true,

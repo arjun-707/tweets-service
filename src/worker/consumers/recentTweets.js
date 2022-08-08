@@ -1,37 +1,73 @@
 const { twitterService } = require('../../services');
 const { Task } = require('../../models');
 
-const execute = async (data) => {
-  // update task status to running
+const updateTaskStatusRunning = async (taskId, startTime) => {
   await Task.findOneAndUpdate(
     {
-      _id: data.taskId,
+      _id: taskId,
     },
     {
       status: 'running',
-      startedAt: new Date(),
+      startedAt: new Date(startTime),
     }
   );
+};
 
-  // fetch recent tweets and total tweet count parallel
-  const [userTweetData, userTweetDataCount] = await Promise.all([
-    twitterService.fetchRecentTweets(data.hashtag),
-    twitterService.fetchTweetsCount(data.hashtag),
-  ]);
-
-  // update received data and status to completed
+const updateTaskStatusCompleted = async (taskId, metaInfo, numOfTweets, startTime) => {
+  const endTime = new Date();
   await Task.findOneAndUpdate(
     {
-      _id: data.taskId,
+      _id: taskId,
     },
     {
-      metaInfo: userTweetData.data,
-      numOfTweets: userTweetDataCount.meta.total_tweet_count,
+      metaInfo,
+      numOfTweets,
       status: 'completed',
-      completedAt: new Date(),
+      completedAt: endTime,
+      timeTaken: +endTime - startTime,
     }
   );
-  return userTweetData;
+};
+
+const updateTaskStatusError = async (taskId, error) => {
+  await Task.findOneAndUpdate(
+    {
+      _id: taskId,
+    },
+    {
+      status: 'error',
+      error,
+    }
+  );
+};
+
+const fetchTweetsResult = async (hashtag) => {
+  const [userTweetData, userTweetDataCount] = await Promise.all([
+    twitterService.fetchRecentTweets(hashtag),
+    twitterService.fetchTweetsCount(hashtag),
+  ]);
+  return {
+    metaInfo: userTweetData.data,
+    numOfTweets: userTweetDataCount.meta.total_tweet_count,
+  };
+};
+
+const execute = async (data) => {
+  const startTime = +new Date();
+  try {
+    // update task status to running
+    await updateTaskStatusRunning(data.taskId, new Date(startTime));
+
+    // fetch recent tweets and total tweet count parallel
+    const { metaInfo, numOfTweets } = await fetchTweetsResult(data.hashtag);
+
+    // update received data and status to completed
+    await updateTaskStatusCompleted(data.taskId, metaInfo, numOfTweets, startTime);
+  } catch (ex) {
+    // update task on error occurred
+    await updateTaskStatusError(data.taskId, ex);
+  }
+  return data;
 };
 
 module.exports = {
