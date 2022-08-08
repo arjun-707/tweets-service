@@ -73,7 +73,7 @@ List of available routes:
 `POST /v1/user/login` - login\
 `POST /v1/user/logout` - logout\
 
-**User routes**:\
+**Task routes**:\
 `POST /v1/tasks/createTask` - create a task\
 `GET /v1/tasks/listTask` - get all task list\
 `GET /v1/tasks/completedTask` - get completed task list\
